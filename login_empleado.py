@@ -2,6 +2,8 @@ from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QLabel, QLineEdit
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
 from empleado_window import EmpleadoWindow
+from database import db
+
 
 class LoginEmpleado(QMainWindow):
     def __init__(self, main_window=None):
@@ -35,6 +37,8 @@ class LoginEmpleado(QMainWindow):
         self.pass_input.setStyleSheet("color: black; border: 2px solid #4a7c59; border-radius: 5px; padding: 6px;")
         layout.addWidget(self.pass_input)
 
+
+
         btn_login = QPushButton("Iniciar Sesión")
         btn_login.setFixedHeight(45)
         btn_login.setFont(QFont("Arial", 12, QFont.Weight.Bold))
@@ -46,16 +50,24 @@ class LoginEmpleado(QMainWindow):
         central.setLayout(layout)
 
     def do_login(self):
-        if self.user_input.text() and self.pass_input.text():
-            # Abrir ventana de empleado pasando referencia al main
-            self.empleado_window = EmpleadoWindow(self.main_window)
-            self.empleado_window.show()
-            self.hide()  # <-- ocultamos login en lugar de cerrarlo
-        else:
+        username = self.user_input.text().strip()
+        password = self.pass_input.text().strip()
+
+        if not username or not password:
             QMessageBox.warning(self, "Error", "Complete todos los campos")
+            return
+
+
+        usuario = db.autenticar_usuario(username, password)
+
+        if usuario and usuario['tipo'] in ['empleado', 'admin']:
+            self.empleado_window = EmpleadoWindow(self.main_window, usuario)
+            self.empleado_window.show()
+            self.hide()
+        else:
+            QMessageBox.warning(self, "Error", "Usuario o contraseña incorrectos")
 
     def closeEvent(self, event):
-        # Solo mostrar main si el login se cierra manualmente (EmpleadoWindow no abierto)
         if self.main_window and not hasattr(self, 'empleado_window'):
             self.main_window.show()
         event.accept()
