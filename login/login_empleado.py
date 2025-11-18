@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QLabel, QLineEdit
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
 from empleado_window import EmpleadoWindow
-from database import db
+from conexion.database import db
 
 
 class LoginEmpleado(QMainWindow):

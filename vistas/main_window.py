@@ -2,8 +2,8 @@ from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLab
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
 
-from login_cliente import LoginCliente
-from login_empleado import LoginEmpleado
+from login.login_cliente import LoginCliente
+from login.login_empleado import LoginEmpleado
 
 class MainWindow(QMainWindow):
     def __init__(self):

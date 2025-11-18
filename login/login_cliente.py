@@ -2,8 +2,8 @@ from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QLabel, QLineEdi
                              QPushButton, QMessageBox, QComboBox, QHBoxLayout)
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
-from cliente_window import ClienteWindow
-from database import db
+from vistas.cliente_window import ClienteWindow
+from conexion.database import db
 
 
 class LoginCliente(QMainWindow):

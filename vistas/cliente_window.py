@@ -1,10 +1,8 @@
-import json, os
-from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QLabel,
                              QPushButton, QTableWidget, QTableWidgetItem, QMessageBox,
                              QSpinBox, QScrollArea, QGridLayout)
 from PyQt6.QtGui import QFont
-from PyQt6.QtCore import Qt
-from database import db
+from conexion.database import db
 
 
 class ClienteWindow(QMainWindow):

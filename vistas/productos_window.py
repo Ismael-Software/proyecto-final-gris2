@@ -1,11 +1,10 @@
-import json, os
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QLabel, QHBoxLayout,
     QLineEdit, QDoubleSpinBox, QComboBox, QPushButton, QTableWidget,
     QTableWidgetItem, QMessageBox, QSpinBox
 )
 from PyQt6.QtGui import QFont
-from database import db
+from conexion.database import db
 
 
 class ProductosWindow(QMainWindow):

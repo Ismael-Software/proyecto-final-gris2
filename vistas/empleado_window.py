@@ -2,10 +2,10 @@ from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QLabel, QHBoxLayo
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
 
-from productos_window import ProductosWindow
-from empleados_window import EmpleadosWindow
-from ventas_window import VentasWindow
-from database import db
+from vistas.productos_window import ProductosWindow
+from vistas.empleados_window import EmpleadosWindow
+from vistas.ventas_window import VentasWindow
+
 
 class EmpleadoWindow(QMainWindow):
     def __init__(self, main_window=None, usuario_data=None):

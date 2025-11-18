@@ -1,11 +1,9 @@
-import os, json
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QLabel, QHBoxLayout,
     QComboBox, QTableWidget, QTableWidgetItem, QPushButton, QMessageBox
 )
 from PyQt6.QtGui import QFont
-from PyQt6.QtCore import Qt
-from database import db
+from conexion.database import db
 
 
 class VentasWindow(QMainWindow):
