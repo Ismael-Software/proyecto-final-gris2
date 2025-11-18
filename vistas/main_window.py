@@ -19,7 +19,6 @@ class MainWindow(QMainWindow):
         main_layout.setContentsMargins(40, 30, 40, 30)
         main_layout.setSpacing(20)
 
-
         title = QLabel("Cafetería")
         title.setFont(QFont("Georgia", 28, QFont.Weight.Bold))
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
