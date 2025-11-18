@@ -5,11 +5,13 @@ from PyQt6.QtCore import Qt
 from productos_window import ProductosWindow
 from empleados_window import EmpleadosWindow
 from ventas_window import VentasWindow
+from database import db
 
 class EmpleadoWindow(QMainWindow):
-    def __init__(self, main_window=None):
+    def __init__(self, main_window=None, usuario_data=None):
         super().__init__()
         self.main_window = main_window
+        self.usuario_data = usuario_data
         self.setWindowTitle("Empleado - Panel de Administración")
         self.setGeometry(100, 100, 1000, 650)
 
@@ -18,6 +20,13 @@ class EmpleadoWindow(QMainWindow):
 
         layout = QVBoxLayout()
         layout.setContentsMargins(20,20,20,20)
+
+        # Mostrar información del usuario
+        if usuario_data:
+            user_info = QLabel(f"Usuario: {usuario_data['username']} - Tipo: {usuario_data['tipo']}")
+            user_info.setFont(QFont("Arial", 12, QFont.Weight.Bold))
+            user_info.setStyleSheet("color: #4a7c59; background-color: #f1f8e9; padding: 8px; border-radius: 5px;")
+            layout.addWidget(user_info)
 
         header = QLabel("Panel de Administración")
         header.setFont(QFont("Georgia", 20, QFont.Weight.Bold))

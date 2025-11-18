@@ -4,9 +4,8 @@ from PyQt6.QtWidgets import (
     QLineEdit, QComboBox, QPushButton, QTableWidget, QTableWidgetItem, QMessageBox
 )
 from PyQt6.QtGui import QFont
+from database import db
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
-EMP_FILE = os.path.join(DATA_DIR, "employees.json")
 
 class EmpleadosWindow(QMainWindow):
     def __init__(self, parent_window=None):
@@ -18,7 +17,7 @@ class EmpleadosWindow(QMainWindow):
         central = QWidget()
         self.setCentralWidget(central)
         layout = QVBoxLayout()
-        layout.setContentsMargins(20,20,20,20)
+        layout.setContentsMargins(20, 20, 20, 20)
 
         title = QLabel("Gestión de Empleados")
         title.setFont(QFont("Georgia", 18, QFont.Weight.Bold))
@@ -46,8 +45,8 @@ class EmpleadosWindow(QMainWindow):
         layout.addLayout(form_layout)
 
         self.tabla = QTableWidget()
-        self.tabla.setColumnCount(4)
-        self.tabla.setHorizontalHeaderLabels(["Nombre","Puesto","Turno","Acciones"])
+        self.tabla.setColumnCount(5)
+        self.tabla.setHorizontalHeaderLabels(["ID", "Nombre", "Puesto", "Turno", "Acciones"])
         self.tabla.horizontalHeader().setStretchLastSection(True)
         layout.addWidget(self.tabla)
 
@@ -55,53 +54,56 @@ class EmpleadosWindow(QMainWindow):
         self.cargar_datos()
 
     def cargar_datos(self):
-        try:
-            with open(EMP_FILE, 'r', encoding='utf-8') as f:
-                empleados = json.load(f)
-        except Exception:
+        query = "SELECT id, nombre, puesto, disponible FROM empleado"
+        empleados = db.execute_query(query)
+
+        if empleados is None:
             empleados = []
+
         self.tabla.setRowCount(len(empleados))
         for i, e in enumerate(empleados):
-            self.tabla.setItem(i, 0, QTableWidgetItem(e['name']))
-            self.tabla.setItem(i, 1, QTableWidgetItem(e.get('role','')))
-            self.tabla.setItem(i, 2, QTableWidgetItem(e.get('shift','')))
+            self.tabla.setItem(i, 0, QTableWidgetItem(str(e[0])))
+            self.tabla.setItem(i, 1, QTableWidgetItem(e[1]))
+            self.tabla.setItem(i, 2, QTableWidgetItem(e[2]))
+            self.tabla.setItem(i, 3, QTableWidgetItem("Disponible" if e[3] else "No disponible"))
             btn = QPushButton("Eliminar")
             btn.setStyleSheet("background-color:#d32f2f;color:white;border-radius:3px;")
-            btn.clicked.connect(lambda checked, idx=i: self.eliminar_empleado(idx))
-            self.tabla.setCellWidget(i, 3, btn)
-
-    def save_emps(self, empleados):
-        os.makedirs(DATA_DIR, exist_ok=True)
-        with open(EMP_FILE, 'w', encoding='utf-8') as f:
-            json.dump(empleados, f, indent=2, ensure_ascii=False)
+            btn.clicked.connect(lambda checked, idx=e[0]: self.eliminar_empleado(idx))
+            self.tabla.setCellWidget(i, 4, btn)
 
     def agregar_empleado(self):
         name = self.nombre_input.text().strip()
         role = self.puesto_input.currentText()
         shift = self.turno_input.currentText()
+
         if not name:
             QMessageBox.warning(self, "Error", "Ingrese el nombre del empleado")
             return
-        try:
-            with open(EMP_FILE, 'r', encoding='utf-8') as f:
-                empleados = json.load(f)
-        except Exception:
-            empleados = []
-        empleados.append({"name": name, "role": role, "shift": shift})
-        self.save_emps(empleados)
-        self.nombre_input.clear()
-        self.cargar_datos()
 
-    def eliminar_empleado(self, idx):
-        try:
-            with open(EMP_FILE, 'r', encoding='utf-8') as f:
-                empleados = json.load(f)
-        except Exception:
-            empleados = []
-        if 0 <= idx < len(empleados):
-            empleados.pop(idx)
-            self.save_emps(empleados)
+        query = """INSERT INTO empleado (nombre, puesto, disponible, cafeteria_id) 
+                   VALUES (%s, %s, %s, %s)"""
+        result = db.execute_query(query, (name, role, 1, 1))
+
+        if result:
+            QMessageBox.information(self, "Éxito", "Empleado agregado correctamente")
+            self.nombre_input.clear()
             self.cargar_datos()
+        else:
+            QMessageBox.warning(self, "Error", "No se pudo agregar el empleado")
+
+    def eliminar_empleado(self, empleado_id):
+        reply = QMessageBox.question(self, "Confirmar", "¿Está seguro de eliminar este empleado?",
+                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+
+        if reply == QMessageBox.StandardButton.Yes:
+            query = "DELETE FROM empleado WHERE id = %s"
+            result = db.execute_query(query, (empleado_id,))
+
+            if result:
+                QMessageBox.information(self, "Éxito", "Empleado eliminado correctamente")
+                self.cargar_datos()
+            else:
+                QMessageBox.warning(self, "Error", "No se pudo eliminar el empleado")
 
     def closeEvent(self, event):
         if hasattr(self, 'parent_window') and self.parent_window:

@@ -5,9 +5,8 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
+from database import db
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
-SALES_FILE = os.path.join(DATA_DIR, "sales.json")
 
 class VentasWindow(QMainWindow):
     def __init__(self, parent_window=None):
@@ -51,7 +50,7 @@ class VentasWindow(QMainWindow):
 
         self.tabla = QTableWidget()
         self.tabla.setColumnCount(6)
-        self.tabla.setHorizontalHeaderLabels(["ID", "Fecha", "Cliente", "Productos", "Total", "Estado"])
+        self.tabla.setHorizontalHeaderLabels(["ID", "Fecha", "Cliente", "Empleado", "Total", "Detalles"])
         self.tabla.horizontalHeader().setStretchLastSection(True)
         layout.addWidget(self.tabla)
 
@@ -61,11 +60,6 @@ class VentasWindow(QMainWindow):
         btn_actualizar.clicked.connect(self.cargar_datos)
         botones_layout.addWidget(btn_actualizar)
 
-        btn_completar = QPushButton("Marcar como completado")
-        btn_completar.setStyleSheet("background-color:#4CAF50;color:white;border-radius:5px;")
-        btn_completar.clicked.connect(self.marcar_completado)
-        botones_layout.addWidget(btn_completar)
-
         botones_layout.addStretch()
         layout.addLayout(botones_layout)
 
@@ -73,66 +67,54 @@ class VentasWindow(QMainWindow):
         self.cargar_datos()
 
     def cargar_datos(self):
-        try:
-            with open(SALES_FILE, 'r', encoding='utf-8') as f:
-                ventas = json.load(f)
-        except Exception:
+        query = """
+        SELECT p.id, p.fecha, c.nombre, e.nombre, p.total 
+        FROM pedido p 
+        LEFT JOIN cliente c ON p.cliente_id = c.id 
+        LEFT JOIN empleado e ON p.empleado_id = e.id 
+        ORDER BY p.fecha DESC
+        """
+        ventas = db.execute_query(query)
+
+        if ventas is None:
             ventas = []
 
         self.tabla.setRowCount(len(ventas))
         total = 0
+
         for i, v in enumerate(ventas):
-            self.tabla.setItem(i, 0, QTableWidgetItem(v.get('id', '')))
-            self.tabla.setItem(i, 1, QTableWidgetItem(v.get('fecha', '')))
-            self.tabla.setItem(i, 2, QTableWidgetItem(v.get('cliente', '')))
-            self.tabla.setItem(i, 3, QTableWidgetItem(v.get('productos', '')))
-            self.tabla.setItem(i, 4, QTableWidgetItem(f"${v.get('total', 0):.2f}"))
+            self.tabla.setItem(i, 0, QTableWidgetItem(str(v[0])))
+            self.tabla.setItem(i, 1, QTableWidgetItem(str(v[1])))
+            self.tabla.setItem(i, 2, QTableWidgetItem(v[2] or "Cliente Local"))
+            self.tabla.setItem(i, 3, QTableWidgetItem(v[3] or "Empleado No Asignado"))
+            self.tabla.setItem(i, 4, QTableWidgetItem(f"${v[4]:.2f}"))
 
-            estado_item = QTableWidgetItem(v.get('estado', ''))
-            estado_text = v.get('estado', '').lower()
-            if estado_text in ('completado', 'completo', 'completed'):
-                estado_item.setBackground(Qt.GlobalColor.green)
-            else:
-                estado_item.setBackground(Qt.GlobalColor.yellow)
-            self.tabla.setItem(i, 5, estado_item)
+            # Botón para ver detalles
+            btn_detalles = QPushButton("Ver Detalles")
+            btn_detalles.setStyleSheet("background-color:#2196F3;color:white;border-radius:3px;")
+            btn_detalles.clicked.connect(lambda checked, pedido_id=v[0]: self.ver_detalles(pedido_id))
+            self.tabla.setCellWidget(i, 5, btn_detalles)
 
-            total += float(v.get('total', 0))
+            total += float(v[4])
 
         self.total_ventas_label.setText(f"Total Ventas: ${total:.2f}")
         self.num_ventas_label.setText(f"Número de Ventas: {len(ventas)}")
 
-    def marcar_completado(self):
-        row = self.tabla.currentRow()
-        if row == -1:
-            QMessageBox.warning(self, "Atención", "Seleccione un pedido para marcar como completado.")
-            return
+    def ver_detalles(self, pedido_id):
+        query = """
+        SELECT pr.nombre, pp.cantidad, pr.precio 
+        FROM pedido_producto pp 
+        JOIN producto pr ON pp.producto_id = pr.id 
+        WHERE pp.pedido_id = %s
+        """
+        detalles = db.execute_query(query, (pedido_id,))
 
-        sale_id_item = self.tabla.item(row, 0)
-        if not sale_id_item:
-            QMessageBox.warning(self, "Error", "No se encontró el ID del pedido seleccionado.")
-            return
-        sale_id = sale_id_item.text()
+        if detalles:
+            detalle_text = "Detalles del Pedido:\n\n"
+            for detalle in detalles:
+                detalle_text += f"{detalle[0]} x{detalle[1]} - ${detalle[2]:.2f}\n"
 
-        try:
-            with open(SALES_FILE, 'r', encoding='utf-8') as f:
-                ventas = json.load(f)
-        except Exception:
-            ventas = []
-
-        changed = False
-        for venta in ventas:
-            if venta.get('id') == sale_id:
-                venta['estado'] = 'Completado'
-                changed = True
-                break
-
-        if changed:
-            with open(SALES_FILE, 'w', encoding='utf-8') as f:
-                json.dump(ventas, f, indent=2, ensure_ascii=False)
-            QMessageBox.information(self, "Completado", f"Pedido {sale_id} marcado como completado.")
-            self.cargar_datos()
-        else:
-            QMessageBox.warning(self, "No encontrado", "No se pudo actualizar el pedido seleccionado.")
+            QMessageBox.information(self, f"Detalles Pedido #{pedido_id}", detalle_text)
 
     def closeEvent(self, event):
         if hasattr(self, 'parent_window') and self.parent_window:
